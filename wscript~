@@ -1,0 +1,11 @@
+## -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
+
+def build(bld):
+    #manet-routing-compare
+    obj = bld.create_ns3_program('manet-routing-compare',
+                                 ['flow-monitor','core','location-service','wifi', 'dsr', 'dsdv', 'aodv', 'olsr','polsr', 'internet', 'applications'])
+    obj.source = ['TimestampTag.cc','manet-routing-compare.cc','WifiPhyStats.cc']
+    
+    obj = bld.create_ns3_program('waypoint-test', 
+                                    ['network','mobility','flow-monitor','core','wifi', 'dsr', 'dsdv', 'aodv', 'olsr','polsr', 'internet', 'applications'])
+    obj.source = ['TimestampTag.cc','WifiPhyStats.cc','waypoint-test.cc']
