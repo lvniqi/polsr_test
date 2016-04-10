@@ -276,30 +276,30 @@ WayPointTest::CreateNodes ()
   for(int i=0;i<3;i++){
       {
         Ptr<UniformRandomVariable> var = CreateObject<UniformRandomVariable> ();
-        double speed_r = var->GetValue (m_speed/2,m_speed);
+        double speed_r = var->GetValue (0,m_speed);
         Ptr<WaypointMobilityModel> mob = nodes.Get (4*i+0)->GetObject<WaypointMobilityModel> ();
-        InstallPositon(mob,-50+i*150,0,50,speed_r,0);
+        InstallPositon(mob,-50+i*100,0,50,speed_r,0);
       }
       {
         Ptr<UniformRandomVariable> var = CreateObject<UniformRandomVariable> ();
-        double speed_r = var->GetValue (m_speed/2,m_speed);
+        double speed_r = var->GetValue (0,m_speed);
         Ptr<WaypointMobilityModel> mob = nodes.Get (4*i+1)->GetObject<WaypointMobilityModel> ();
-        InstallPositon(mob,0+i*150,-50,50,speed_r,1/3.0);
+        InstallPositon(mob,0+i*100,-50,50,speed_r,1/3.0);
       }
       {
         Ptr<UniformRandomVariable> var = CreateObject<UniformRandomVariable> ();
-        double speed_r = var->GetValue (m_speed/2,m_speed);
+        double speed_r = var->GetValue (0,m_speed);
         Ptr<WaypointMobilityModel> mob = nodes.Get (4*i+2)->GetObject<WaypointMobilityModel> ();
-        InstallPositon(mob,50+i*150,0,50,speed_r,2/3.0);
+        InstallPositon(mob,50+i*100,0,50,speed_r,2/3.0);
       }
       {
         Ptr<WaypointMobilityModel> mob = nodes.Get (4*i+3)->GetObject<WaypointMobilityModel> ();
-        InstallPositon(mob,0+i*150,0,50,0,0);
+        InstallPositon(mob,0+i*100,0,50,0,0);
       }
   }
   {
     Ptr<WaypointMobilityModel> mob = nodes.Get (node_size-1)->GetObject<WaypointMobilityModel> ();
-    InstallPositon(mob,2*150,150/2,50,0,0);
+    InstallPositon(mob,2*100,100/2,50,0,0);
   }
 }
 
