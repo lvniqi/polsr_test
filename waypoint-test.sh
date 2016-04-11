@@ -14,8 +14,13 @@ do
   	for seed in $SEED
   	do
 			echo protocol $protocol, speed $speed, seed $seed
-			../../waf --run "waypoint-test --protocol=$protocol --speed=$speed --seed=$seed --test=0 --time=500"
-			../../waf --run "waypoint-test --protocol=$protocol --speed=$speed --seed=$seed --test=1 --time=500"
+			{
+				../../waf --run "waypoint-test --protocol=$protocol --speed=$speed --seed=$seed --test=0 --time=500"
+			}&
+			{
+				../../waf --run "waypoint-test --protocol=$protocol --speed=$speed --seed=$seed --test=1 --time=500"
+			}&
+			wait
 		done
   done
 done

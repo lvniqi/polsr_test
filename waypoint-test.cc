@@ -278,28 +278,28 @@ WayPointTest::CreateNodes ()
         Ptr<UniformRandomVariable> var = CreateObject<UniformRandomVariable> ();
         double speed_r = var->GetValue (0,m_speed);
         Ptr<WaypointMobilityModel> mob = nodes.Get (4*i+0)->GetObject<WaypointMobilityModel> ();
-        InstallPositon(mob,-50+i*100,0,50,speed_r,0);
+        InstallPositon(mob,-1280+-640+i*1280,0,640,speed_r,0);
       }
       {
         Ptr<UniformRandomVariable> var = CreateObject<UniformRandomVariable> ();
         double speed_r = var->GetValue (0,m_speed);
         Ptr<WaypointMobilityModel> mob = nodes.Get (4*i+1)->GetObject<WaypointMobilityModel> ();
-        InstallPositon(mob,0+i*100,-50,50,speed_r,1/3.0);
+        InstallPositon(mob,-1280+i*1280,-640,640,speed_r,1/3.0);
       }
       {
         Ptr<UniformRandomVariable> var = CreateObject<UniformRandomVariable> ();
         double speed_r = var->GetValue (0,m_speed);
         Ptr<WaypointMobilityModel> mob = nodes.Get (4*i+2)->GetObject<WaypointMobilityModel> ();
-        InstallPositon(mob,50+i*100,0,50,speed_r,2/3.0);
+        InstallPositon(mob,-1280+640+i*1280,0,640,speed_r,2/3.0);
       }
       {
         Ptr<WaypointMobilityModel> mob = nodes.Get (4*i+3)->GetObject<WaypointMobilityModel> ();
-        InstallPositon(mob,0+i*100,0,50,0,0);
+        InstallPositon(mob,-1280+i*1280,0,640,0,0);
       }
   }
   {
     Ptr<WaypointMobilityModel> mob = nodes.Get (node_size-1)->GetObject<WaypointMobilityModel> ();
-    InstallPositon(mob,2*100,100/2,50,0,0);
+    InstallPositon(mob,-1280+2*1280,1280/2,640,0,0);
   }
 }
 
@@ -322,7 +322,7 @@ WayPointTest::CreateDevices ()
   YansWifiPhyHelper wifiPhy =  YansWifiPhyHelper::Default ();
   YansWifiChannelHelper wifiChannel;
   wifiChannel.SetPropagationDelay ("ns3::ConstantSpeedPropagationDelayModel");
-  wifiChannel.AddPropagationLoss ("ns3::LogDistancePropagationLossModel");
+  wifiChannel.AddPropagationLoss ("ns3::FriisPropagationLossModel");
   wifiPhy.SetChannel (wifiChannel.Create ());
   wifiPhy.Set ("RxGain", DoubleValue (+3) ); 
   wifiPhy.Set ("TxGain", DoubleValue (+3) ); 
