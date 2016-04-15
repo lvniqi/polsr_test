@@ -50,7 +50,7 @@
 
 #include "TimestampTag.h"
 void FlowMonitor_Print(FlowMonitorHelper &flowmon,Ptr<FlowMonitor> &monitor
-  ,std::string protocolName,double speed);
+  ,std::string protocolName,double speed,std::string csv_name);
 using namespace ns3;
 class WayPointTest 
 {
@@ -106,6 +106,7 @@ private:
   double rttTotal;
   double rttCount;
   double UdpStartTime;
+  bool m_mobility;
   std::string rate;//应用层速度
 private:
   void CreateNodes ();
@@ -116,7 +117,8 @@ private:
   void InstallDelayApplications();
   void InstallPositon(Ptr<WaypointMobilityModel> mob,
       double mid_x,double mid_y,double range, double speed,double start_w);
-  
+  void InstallRandomMobility();
+  void InstallScanMobility();
   Ptr<Socket> SetupPacketReceive (Ipv4Address addr, Ptr<Node> node,uint16_t sinkPort);
   void SentPacket (Ptr<const Packet> p);
 };
@@ -150,7 +152,8 @@ WayPointTest::WayPointTest () :
   packetsReceived(0),
   rttTotal(0),
   rttCount(0),
-  UdpStartTime(0)
+  UdpStartTime(0),
+  m_mobility(false)
 {
   animFile = "waypoint/waypoint-animation.xml" ;  // Name of file for animation output
   m_wifiPhyStats = CreateObject<WifiPhyStats> ();
@@ -165,7 +168,6 @@ WayPointTest::Configure (int argc, char **argv)
   // LogComponentEnable("AodvRoutingProtocol", LOG_LEVEL_ALL);
 
   CommandLine cmd;
-
   cmd.AddValue ("pcap", "Write PCAP traces.", pcap);
   cmd.AddValue ("printRoutes", "Print routing table dumps.", printRoutes);
   cmd.AddValue ("size", "Number of nodes.", node_size);
@@ -175,6 +177,7 @@ WayPointTest::Configure (int argc, char **argv)
   cmd.AddValue ("protocol", "0=POLSR;1=OLSR;2=AODV;3=DSDV.", m_protocol);
   cmd.AddValue ("seed", "the seed of the Random module.",m_seed);
   cmd.AddValue ("test", "0=Delay;1=Throughput.",m_testBench);
+  cmd.AddValue ("mobility","false=random;true=cycle",m_mobility);
   cmd.Parse (argc, argv);
   return true;
 }
@@ -208,7 +211,13 @@ WayPointTest::Run ()
   */
   Simulator::Run ();
   std::cout << "Animation Trace file created:" << animFile.c_str ()<< std::endl;
-  FlowMonitor_Print(flowmon,monitor,m_protocolName,m_speed);
+  std::string csv_name;
+  if(m_mobility){
+    csv_name = "waypoint/waypoint_throught_random.csv";
+  }else{
+    csv_name = "waypoint/waypoint_throught.csv";
+  }
+  FlowMonitor_Print(flowmon,monitor,m_protocolName,m_speed,csv_name);
   Simulator::Destroy ();
 }
 
@@ -262,6 +271,45 @@ WayPointTest::CreateNodes ()
       os << "node-" << i;
       Names::Add (os.str (), nodes.Get (i));
     }
+  if(m_mobility){
+    InstallRandomMobility();
+  }else{
+    InstallScanMobility();
+  }
+}
+void
+WayPointTest::InstallRandomMobility()
+{
+  std::cout<<"InstallRandomMobility"<<std::endl;
+  MobilityHelper mobility;
+  int64_t streamIndex = 0; // used to get consistent mobility across scenarios
+  ObjectFactory pos;
+  pos.SetTypeId ("ns3::RandomRectanglePositionAllocator");
+  std::stringstream xsize,ysize;
+  xsize<<"ns3::UniformRandomVariable[Min=-2000.0|Max="<<"2000"<<"]";
+  pos.Set ("X", StringValue (xsize.str()));
+  ysize<<"ns3::UniformRandomVariable[Min=-2000.0|Max="<<"2000"<<"]";
+  pos.Set ("Y", StringValue (ysize.str()));
+
+  Ptr<PositionAllocator> taPositionAlloc = pos.Create ()->GetObject<PositionAllocator> ();
+  streamIndex += taPositionAlloc->AssignStreams (streamIndex);
+
+  std::stringstream ssSpeed;
+  ssSpeed << "ns3::UniformRandomVariable[Min="<<m_speed/2<<"|Max=" << m_speed+0.0001 << "]";
+  std::stringstream ssPause;
+  ssPause << "ns3::ConstantRandomVariable[Constant=" << 0 << "]";
+  mobility.SetMobilityModel ("ns3::RandomWaypointMobilityModel",
+                                "Speed", StringValue (ssSpeed.str ()),
+                                "Pause", StringValue (ssPause.str ()),
+                                "PositionAllocator", PointerValue (taPositionAlloc));
+  mobility.SetPositionAllocator (taPositionAlloc);
+  mobility.Install (nodes);
+  streamIndex += mobility.AssignStreams (nodes, streamIndex);  
+}
+void
+WayPointTest::InstallScanMobility()
+{
+  std::cout<<"InstallScanMobility"<<std::endl;
   // Create static grid
   MobilityHelper mobility;
   Ptr<ListPositionAllocator> positionAlloc = CreateObject<ListPositionAllocator> ();
@@ -277,20 +325,23 @@ WayPointTest::CreateNodes ()
       {
         Ptr<UniformRandomVariable> var = CreateObject<UniformRandomVariable> ();
         double speed_r = var->GetValue (0,m_speed);
+        double pos = var->GetValue (0,2*3.14);
         Ptr<WaypointMobilityModel> mob = nodes.Get (4*i+0)->GetObject<WaypointMobilityModel> ();
-        InstallPositon(mob,-1280+-640+i*1280,0,640,speed_r,0);
+        InstallPositon(mob,-1280+-640+i*1280,0,640,speed_r,pos);
       }
       {
         Ptr<UniformRandomVariable> var = CreateObject<UniformRandomVariable> ();
         double speed_r = var->GetValue (0,m_speed);
+        double pos = var->GetValue (0,2*3.14);
         Ptr<WaypointMobilityModel> mob = nodes.Get (4*i+1)->GetObject<WaypointMobilityModel> ();
-        InstallPositon(mob,-1280+i*1280,-640,640,speed_r,1/3.0);
+        InstallPositon(mob,-1280+i*1280,-640,640,speed_r,pos);
       }
       {
         Ptr<UniformRandomVariable> var = CreateObject<UniformRandomVariable> ();
         double speed_r = var->GetValue (0,m_speed);
+        double pos = var->GetValue (0,2*3.14);
         Ptr<WaypointMobilityModel> mob = nodes.Get (4*i+2)->GetObject<WaypointMobilityModel> ();
-        InstallPositon(mob,-1280+640+i*1280,0,640,speed_r,2/3.0);
+        InstallPositon(mob,-1280+640+i*1280,0,640,speed_r,pos);
       }
       {
         Ptr<WaypointMobilityModel> mob = nodes.Get (4*i+3)->GetObject<WaypointMobilityModel> ();
@@ -302,7 +353,6 @@ WayPointTest::CreateNodes ()
     InstallPositon(mob,-1280+2*1280,1280/2,640,0,0);
   }
 }
-
 void
 WayPointTest::CreateDevices ()
 {
@@ -455,7 +505,7 @@ WayPointTest::InstallDelayApplications(){
 }
 
 void FlowMonitor_Print(FlowMonitorHelper &flowmon,Ptr<FlowMonitor> &monitor,
-  std::string protocolName,double speed){
+  std::string protocolName,double speed,std::string csv_name){
 	// Print per flow statistics
   monitor->CheckForLostPackets ();
   Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (flowmon.GetClassifier ());
@@ -481,7 +531,6 @@ void FlowMonitor_Print(FlowMonitorHelper &flowmon,Ptr<FlowMonitor> &monitor,
   }
   if(count){
     std::cout<<"Throughput: " << max << " Kbps"<<std::endl;
-    std::string csv_name = "waypoint/waypoint_throught.csv";
     std::ofstream out (csv_name.c_str (),std::ios::app);
     
     /*out << "protocol," <<
@@ -557,7 +606,13 @@ void WayPointTest::CheckThroughput ()
   packetsReceived = 0;
   if(totalTime-Simulator::Now ().GetSeconds ()<=1)
   {
-    std::ofstream out_all("waypoint/waypoint_delay.csv", std::ios::app);
+    std::string csv_name;
+    if(m_mobility){
+        csv_name = "waypoint/waypoint_delay_random.csv";
+    }else{
+        csv_name = "waypoint/waypoint_delay.csv";
+    }
+    std::ofstream out_all(csv_name.c_str(), std::ios::app);
     out_all<< m_protocolName << ","
     << m_speed <<","
     << rate <<","
