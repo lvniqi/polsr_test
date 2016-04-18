@@ -63,7 +63,7 @@ public:
   /// Report results
   void Report (std::ostream & os);
   //测试吞吐量
-  void CheckThroughput();
+  void CheckDelay();
   void ReceivePacket (Ptr<Socket> socket);
 private:
 
@@ -107,6 +107,8 @@ private:
   double rttCount;
   double UdpStartTime;
   bool m_mobility;
+  //使用延时转发
+  bool m_use_delay;
   std::string rate;//应用层速度
 private:
   void CreateNodes ();
@@ -178,6 +180,7 @@ WayPointTest::Configure (int argc, char **argv)
   cmd.AddValue ("seed", "the seed of the Random module.",m_seed);
   cmd.AddValue ("test", "0=Delay;1=Throughput.",m_testBench);
   cmd.AddValue ("mobility","false=random;true=cycle",m_mobility);
+  cmd.AddValue ("use_delay","false=not use delay delivery;true=use delay delivery",m_use_delay);
   cmd.Parse (argc, argv);
   return true;
 }
@@ -199,7 +202,7 @@ WayPointTest::Run ()
   //InstallThoughtApplications();
   //InstallDelayApplications();
   std::cout << "Starting simulation for " << totalTime << " s ...\n";
-  //CheckThroughput();
+  //CheckDelay();
   Simulator::Stop (Seconds (totalTime));
   Ptr<FlowMonitor> monitor = flowmon.InstallAll();
   // Create the animation object and configure for specified output
@@ -400,6 +403,10 @@ WayPointTest::InstallInternetStack ()
   switch (m_protocol)
   {
     case 0:
+      if(m_use_delay){
+        std::cout<<"Use Delay Delievry"<<std::endl;
+        polsr.Set("DelayDelievry",BooleanValue(true));
+      }
       polsr.Set("HelloInterval",TimeValue (Seconds (1)));
       stack.SetRoutingHelper (polsr); // has effect on the next Install ()
       m_protocolName = "POLSR";
@@ -469,7 +476,7 @@ WayPointTest::InstallThoughtApplications(){
 
     // Create UDP application at n0
     Ptr<TestBench> app1 = CreateObject<TestBench> ();
-    app1->Setup (sink, sinkAddress, 600, 10000000, DataRate ("1Mbps"));
+    app1->Setup (sink, sinkAddress, 600, 10000000, DataRate ("4Mbps"));
     nodes.Get (node_size-1)->AddApplication (app1);
     
     Ptr<UniformRandomVariable> var = CreateObject<UniformRandomVariable> ();
@@ -501,7 +508,7 @@ WayPointTest::InstallDelayApplications(){
   temp.Stop (Seconds (totalTime));
   Config::ConnectWithoutContext("/NodeList/*/ApplicationList/*/$ns3::OnOffApplication/Tx",
                MakeCallback (&WayPointTest::SentPacket, this));
-  Simulator::Schedule (Seconds (UdpStartTime), &WayPointTest::CheckThroughput, this);  
+  Simulator::Schedule (Seconds (UdpStartTime), &WayPointTest::CheckDelay, this);  
 }
 
 void FlowMonitor_Print(FlowMonitorHelper &flowmon,Ptr<FlowMonitor> &monitor,
@@ -587,8 +594,8 @@ void WayPointTest::ReceivePacket (Ptr<Socket> socket)
     }
   }
 }
-//检查throughput
-void WayPointTest::CheckThroughput ()
+//检查Delay
+void WayPointTest::CheckDelay ()
 {
   double kbs = (bytesOnce * 8.0) / 1000;
   double kbs_avr = (bytesTotal*8.0)/1000/(Simulator::Now ().GetSeconds ()-UdpStartTime);
@@ -622,7 +629,7 @@ void WayPointTest::CheckThroughput ()
     << std::endl;
     out_all.close ();
   }
-  Simulator::Schedule (Seconds (1.0), &WayPointTest::CheckThroughput, this);  
+  Simulator::Schedule (Seconds (1.0), &WayPointTest::CheckDelay, this);  
 }
 //安装packet接收器
 Ptr<Socket> WayPointTest::SetupPacketReceive (Ipv4Address addr, Ptr<Node> node,uint16_t sinkPort)
