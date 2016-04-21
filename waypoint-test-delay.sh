@@ -14,7 +14,7 @@ do
 			do
 			echo protocol $protocol, speed $speed, seed $seed
 			{
-				../../waf --run "waypoint-test --protocol=$protocol --speed=$speed --seed=$seed --test=1 --time=500 --mobility=false"
+				../../waf --run "waypoint-test --protocol=$protocol --speed=$speed --seed=$seed --test=1 --time=500 --mobility=false --use_delay=true"
 			}&
 		done
 	wait
